@@ -24,12 +24,22 @@ def resolve_puzzle(dimensao_puzzle, termometros, quantidade_preenchida_linhas, q
     if not verbose:
         m.Params.OutputFlag = 0
     # vars
-    y = m.addVars(dimensao_puzzle,dimensao_puzzle, vtype=GRB.BINARY, name="esta preenchida")
+    y = m.addVars(dimensao_puzzle,dimensao_puzzle, vtype=GRB.BINARY, name="está_preenchida")
 
-    # constraints
+
+    # restricoes
+    for linha in range(dimensao_puzzle):
+        m.addConstr(sum(y[linha, col] for col in range(dimensao_puzzle)) == quantidade_preenchida_linhas[linha], name=f"linha_{linha}")
+
+    for col in range(dimensao_puzzle):
+        m.addConstr(sum(y[linha, col] for linha in range(dimensao_puzzle)) == quantidade_preenchida_colunas[col], name=f"col_{col}")
 
     # termometro é preenchido de baixo para cima
-
+    for t in termometros:
+        for i in range(len(t) - 1):
+            (linha1, col1) = t[i]
+            (linha2, col2) = t[i+1]
+            m.addConstr(y[linha2-1, col2-1] <= y[linha1-1, col1-1], name=f"termometro_de_baixo_p_cima")
     
 
 
@@ -41,6 +51,8 @@ def resolve_puzzle(dimensao_puzzle, termometros, quantidade_preenchida_linhas, q
 
     if m.status == GRB.OPTIMAL:
         # sol = (TODO: obtem os valores das variaveis e determina sol como a matriz com os valores das variaveis (resposta do puzzle))
+        sol = [[int(y[linha, col].X == 1) for col in range(dimensao_puzzle)] for linha in range(dimensao_puzzle)]
+
 
         if verbose:
             print("\nSolução encontrada (1 = mercúrio, 0 = vazio):")
@@ -91,4 +103,3 @@ if __name__ == "__main__":
         print("Sem solução com os termômetros fornecidos. Verifique a lista de termômetros.")
     else:
         print("Solução encontrada com os termômetros fornecidos.")
-
